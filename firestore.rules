@@ -1,0 +1,91 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { 
+      return request.resource.data; 
+    }
+    function existing() { 
+      return resource.data; 
+    }
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    function isAdmin() { 
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'mallouk.youssef@gmail.com'
+      ); 
+    }
+
+    // Validation Helpers
+    function isValidProduct(data) {
+      return data.keys().hasAll(['title', 'category'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 100
+        && ( ('subtitle' in data) == false || (data.subtitle is string && data.subtitle.size() <= 500) )
+        && ( ('fullDesc' in data) == false || (data.fullDesc is string && data.fullDesc.size() <= 100000) )
+        && ( ('price' in data) == false || (data.price is string && data.price.size() <= 50) )
+        && ( ('image' in data) == false || (data.image is string && data.image.size() <= 1000) )
+        && ( ('badge' in data) == false || (data.badge is string && data.badge.size() <= 50) )
+        && ( ('features' in data) == false || (data.features is list && data.features.size() <= 20 && (data.features.size() == 0 || data.features[0] is string)) )
+        && ( ('isFeatured' in data) == false || (data.isFeatured is bool) )
+        && ( ('createdAt' in data) == false || (data.createdAt is number) )
+        && ( ('updatedAt' in data) == false || (data.updatedAt is number) );
+    }
+
+    function isValidArticle(data) {
+      return data.keys().hasAll(['title', 'content'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 100000
+        && ( ('slug' in data) == false || (data.slug is string && data.slug.size() <= 200) )
+        && ( ('excerpt' in data) == false || (data.excerpt is string && data.excerpt.size() <= 1000) )
+        && ( ('image' in data) == false || (data.image is string && data.image.size() <= 1000) )
+        && ( ('createdAt' in data) == false || (data.createdAt is number) )
+        && ( ('updatedAt' in data) == false || (data.updatedAt is number) );
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasOnly(['email'])
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 200;
+    }
+
+    // Collections
+    match /admins/{adminId} {
+      allow list: if isAdmin();
+      allow get: if isValidId(adminId) && isAdmin();
+      allow create: if isValidId(adminId) && isAdmin() && isValidAdminUser(incoming()) && incoming().keys().size() == 1;
+      allow update: if isValidId(adminId) && isAdmin() && isValidAdminUser(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['email']);
+      allow delete: if isValidId(adminId) && isAdmin() && adminId != request.auth.uid; // don't delete yourself
+    }
+
+    match /products/{productId} {
+      allow list: if true; // Public list
+      allow get: if isValidId(productId); // Public read
+      allow create: if isValidId(productId) && isAdmin() && isValidProduct(incoming());
+      allow update: if isValidId(productId) && isAdmin() && isValidProduct(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly([
+        'title', 'category', 'subtitle', 'fullDesc', 'price', 'image', 'badge', 'features', 'isFeatured', 'createdAt', 'updatedAt'
+      ]);
+      allow delete: if isValidId(productId) && isAdmin();
+    }
+
+    match /articles/{articleId} {
+      allow list: if true; // Public list
+      allow get: if isValidId(articleId); // Public read
+      allow create: if isValidId(articleId) && isAdmin() && isValidArticle(incoming());
+      allow update: if isValidId(articleId) && isAdmin() && isValidArticle(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly([
+        'title', 'content', 'slug', 'excerpt', 'image', 'createdAt', 'updatedAt'
+      ]);
+      allow delete: if isValidId(articleId) && isAdmin();
+    }
+  }
+}

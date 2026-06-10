@@ -1,0 +1,9 @@
+{
+  "name": "Simaflex",
+  "description": "Refonte du site vitrine Simaflex proposant des matelas, salons et accessoires de confort.",
+  "requestFramePermissions": [
+    "clipboard-read",
+    "clipboard-write"
+  ],
+  "majorCapabilities": []
+}

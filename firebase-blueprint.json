@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product sold on the Simaflex website.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "price": { "type": "string" },
+        "image": { "type": "string" },
+        "category": { "type": "string" },
+        "badge": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "isFeatured": { "type": "boolean" },
+        "createdAt": { "type": "number", "description": "Timestamp" },
+        "updatedAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["title", "category"]
+    },
+    "Article": {
+      "title": "Article",
+      "description": "A blog article for the Simaflex website.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "image": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp" },
+        "updatedAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["title", "content"]
+    },
+    "AdminUser": {
+        "title": "AdminUser",
+        "description": "List of admin users allowed to access the dashboard",
+        "type": "object",
+        "properties": {
+            "email": { "type": "string" }
+        },
+        "required": ["email"]
+    }
+  },
+  "firestore": {
+    "products": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Collection of products."
+    },
+    "articles": {
+       "schema": { "$ref": "#/entities/Article" },
+       "description": "Collection of blog articles."
+    },
+    "admins": {
+        "schema": { "$ref": "#/entities/AdminUser"},
+        "description": "Collection of admins"
+    }
+  }
+}
