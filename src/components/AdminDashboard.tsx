@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, storage, handleFirestoreError, OperationType } from '../services/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../services/firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User } from 'firebase/auth';
 import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { blogArticles } from "../data/blogData"; // For bootstrapping
 import { productsData } from "../App";
 import { Trash2, Edit2, Plus, LogOut, Loader2, Save, X, CheckCircle2 } from 'lucide-react';
@@ -181,12 +180,28 @@ export const AdminDashboard = () => {
         reader.onerror = () => reject(new Error("FileReader failed"));
       });
 
-      const fileName = `uploads/${Date.now()}_${compressedFile.name}`;
-      const storageRef = ref(storage, fileName);
-      await uploadBytes(storageRef, compressedFile);
-      const downloadURL = await getDownloadURL(storageRef);
+      const formData = new FormData();
+      formData.append("image", compressedFile);
 
-      setEditingItem({...editingItem, image: downloadURL});
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("Failed to parse JSON, received text:", text);
+        throw new Error("Erreur de format de réponse du serveur");
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur lors de l'upload");
+      }
+
+      setEditingItem({...editingItem, image: data.url});
     } catch (error) {
       console.error("Upload error:", error);
       alert("Erreur lors de l'upload de l'image");

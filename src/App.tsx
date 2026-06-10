@@ -1,5 +1,3 @@
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "./services/firebase";
 import { motion } from "motion/react";
 import {
   Phone,
@@ -29,7 +27,9 @@ import {
   ChevronRight,
   ChevronLeft,
   ArrowLeft,
+  Facebook,
   Twitter,
+  Mail,
   Share2
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -2473,7 +2473,8 @@ const PlaceholderPage = ({ title, content }: { title: string, content?: string }
   </div>
 );
 
-
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./services/firebase";
 
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState<Route>("home");
